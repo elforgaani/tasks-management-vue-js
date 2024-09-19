@@ -1,53 +1,30 @@
 <script setup>
 import { router } from "@/router";
 import { useAuthStore } from "@/stores/auth-store";
-import { apiConstants } from "@/utils/api-constants";
-import { instance } from "@/utils/axios-instance";
-import { errorMapping } from "@/utils/error-mapping";
 import { useForm } from "vee-validate";
-import { reactive } from "vue";
 import { useToast } from "vue-toastification";
-import { toTypedSchema } from "@vee-validate/yup";
-import * as Yup from "yup";
 import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import { signInValidationSchema } from "@/utils/validation-schemas";
+import { storeToRefs } from "pinia";
+import { STATUS_VALUES } from "@/utils/constants";
 
 const authStore = useAuthStore();
+const { signInStatus } = storeToRefs(authStore);
 const toast = useToast();
 // Validation Schema
-const validationSchema = toTypedSchema(
-  Yup.object({
-    email: Yup.string().required().email().max(30),
-    password: Yup.string().required().min(8).max(16),
-  })
-);
 
 const { errors, defineField, handleSubmit } = useForm({
-  validationSchema,
+  validationSchema: signInValidationSchema,
 });
 
 const [email, emailAttrs] = defineField("email");
 const [password, passwordAttrs] = defineField("password");
-// State related variable to manage page's different states
-const state = reactive({
-  isLoading: false,
-  isSuccess: false,
-  isError: false,
-});
-// Handling submit section
+
 const onSubmit = handleSubmit(async (values) => {
-  try {
-    state.isLoading = true;
-    const response = await instance.post(apiConstants.signIn, values);
-    state.isSuccess = true;
-    authStore.setUser(response.data);
-    router.replace("/");
-  } catch (error) {
-    console.log(error);
-    const message = errorMapping(error);
-    toast.error(message);
-  } finally {
-    state.isLoading = false;
-  }
+  await authStore.signInUser(values);
+  if (!authStore.error) {
+    return router.replace("/");
+  } else toast.error(authStore.error);
 });
 </script>
 
@@ -108,14 +85,16 @@ const onSubmit = handleSubmit(async (values) => {
         type="submit"
         :class="{
           'rounded-md text-white text-center py-3 h-14': true,
-          'bg-black': !state.isLoading,
-          'bg-[rgba(0,0,0,.4)]': state.isLoading,
+          'bg-black': signInStatus != STATUS_VALUES.loading,
+          'bg-[rgba(0,0,0,.4)]': signInStatus === STATUS_VALUES.loading,
         }"
       >
-        <template v-if="state.isLoading"
+        <template v-if="signInStatus === STATUS_VALUES.loading"
           ><ClipLoader :color="white"
         /></template>
-        <template v-if="!state.isLoading"> Login </template>
+        <template v-if="signInStatus != STATUS_VALUES.loading">
+          Login
+        </template>
       </button>
     </form>
     <div class="flex mx-auto font-thin text-sm text-[#4D4D4D] mt-14 mb-4">
