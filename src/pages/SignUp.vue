@@ -1,80 +1,68 @@
 <script setup>
 import { router } from "@/router";
-import { apiConstants } from "@/utils/api-constants";
-import { instance } from "@/utils/axios-instance";
-import { errorMapping } from "@/utils/error-mapping";
-import { ref, reactive, computed } from "vue";
 import { RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
 import ClipLoader from "vue-spinner/src/ClipLoader.vue";
-
+import { useForm } from "vee-validate";
+import { useRegisterStore } from "@/stores/register-store";
+import {
+  sendOtpValidationSchema,
+  signUpValidationSchema,
+} from "@/utils/validation-schemas";
+import { STATUS_VALUES } from "@/utils/constants";
 const toast = useToast();
-const email = ref("");
-const state = reactive({
-  otpForm: {
-    isLoading: false,
-    isSuccess: false,
-    isError: false,
-    data: {
-      email: "",
-    },
-  },
-  signUpForm: {
-    isLoading: false,
-    isError: false,
-    isSuccess: false,
-    data: {
-      firstName: "",
-      lastName: "",
-      password: "",
-      otp: "",
-    },
-  },
+const registerStore = useRegisterStore();
+
+// Otp related logic
+const {
+  defineField: defineFieldOtp,
+  errors: OtpFormErrors,
+  handleSubmit: handleOtpFormSubmit,
+} = useForm({
+  validationSchema: sendOtpValidationSchema,
 });
 
-const handleSignUpFormSubmit = async () => {
-  try {
-    console.log(email);
+const [email, emailAttrs] = defineFieldOtp("email");
 
-    state.signUpForm.isLoading = true;
-    const response = await instance.post(apiConstants.signUp, {
-      ...state.signUpForm.data,
-      email: email.value,
-      phoneNumber: "0911234567",
-      dob: "9-6-1999",
-    });
-    console.log(response.data);
-    state.signUpForm.isSuccess = true;
-    toast.success(
-      (response.data.message || "User Sign Up Successfully") + ", please sign in"
-    );
-    router.replace("/auth");
-  } catch (error) {
-    const message = errorMapping(error);
-    toast.error(message);
-  } finally {
-    state.otpForm.isLoading = false;
-  }
-};
+const onSubmitOtpForm = handleOtpFormSubmit(async (values) => {
+  console.log(values);
 
-const handleOtpFormSubmit = async () => {
-  try {
-    state.otpForm.isLoading = true;
-    const response = await instance.post(
-      apiConstants.sendOtp,
-      state.otpForm.data
-    );
-    console.log(response.data);
-    state.otpForm.isSuccess = true;
-    email.value = state.otpForm.data.email;
-    toast.success(response.data.message + ", please check your email address");
-  } catch (error) {
-    const message = errorMapping(error);
-    toast.error(message);
-  } finally {
-    state.otpForm.isLoading = false;
+  await registerStore.sendOtp(values);
+  if (
+    registerStore.sendOtpError &&
+    registerStore.sendOtpStatus === STATUS_VALUES.failure
+  ) {
+    toast.error(registerStore.sendOtpError);
+  } else {
+    toast.success(registerStore.sendOtpSuccessMessage);
   }
-};
+});
+
+// Register user related logic
+const {
+  defineField: defineFieldSignUp,
+  errors: SignUpFormErrors,
+  handleSubmit: handleSignUpFormSubmit,
+} = useForm({
+  validationSchema: signUpValidationSchema,
+});
+
+const [firstName, firstNameAttrs] = defineFieldSignUp("firstName");
+const [lastName, lastNameAttrs] = defineFieldSignUp("lastName");
+const [password, passwordAttrs] = defineFieldSignUp("password");
+const [otp, otpAttrs] = defineFieldSignUp("otp");
+
+const onSubmitSignUpForm = handleSignUpFormSubmit(async (values) => {
+  await registerStore.signUp(values);
+  if (
+    !registerStore.registerUserError &&
+    registerStore.registerUserSuccessMessage
+  ) {
+    toast.success(registerStore.registerUserSuccessMessage);
+    return router.replace("/auth");
+  }
+  toast.error(registerStore.registerUserError);
+});
 </script>
 
 <template>
@@ -83,34 +71,46 @@ const handleOtpFormSubmit = async () => {
     <span class="text-3xl font-medium mt-3">Sign up to</span>
     <span class="text-sm font-normal mb-4">Lorem ipsum</span>
     <form
-      @submit.prevent="handleOtpFormSubmit"
-      v-if="!state.otpForm.isSuccess"
+      @submit="onSubmitOtpForm"
+      v-if="registerStore.sendOtpStatus != STATUS_VALUES.success"
       class="flex flex-col"
     >
       <label for="email" class="text-sm font-medium mb-2">Email</label>
       <input
-        v-model="state.otpForm.data.email"
+        v-model="email"
+        :emailAttrs
         type="text"
         name="email"
         id="email"
         placeholder="your@email.com"
         class="rounded-md py-3 px-4 border border-black mb-4"
       />
+      <h4
+        v-if="OtpFormErrors.email"
+        class="text-red-700 bg-[rgba(138,58,52,0.4)] mb-4 rounded-md px-2 font-light"
+      >
+        {{ OtpFormErrors.email }}
+      </h4>
       <button
         type="submit"
         :class="{
           'rounded-md text-white text-center py-3 h-14 ': true,
-          'bg-black': !state.otpForm.isLoading,
-          'bg-[rgba(0,0,0,.4)]': state.otpForm.isLoading,
+          'bg-black': registerStore.sendOtpStatus != STATUS_VALUES.loading,
+          'bg-[rgba(0,0,0,.4)]':
+            registerStore.sendOtpStatus === STATUS_VALUES.loading,
         }"
       >
-        <template v-if="state.otpForm.isLoading"><ClipLoader /></template>
-        <template v-if="!state.otpForm.isLoading">Register</template>
+        <template v-if="registerStore.sendOtpStatus === STATUS_VALUES.loading"
+          ><clip-loader :color="'#ffffff'"></clip-loader
+        ></template>
+        <template v-if="registerStore.sendOtpStatus != STATUS_VALUES.loading"
+          >Register</template
+        >
       </button>
     </form>
     <form
-      @submit.prevent="handleSignUpFormSubmit"
-      v-else="state.otpForm.isSuccess"
+      @submit="onSubmitSignUpForm"
+      v-else="registerStore.sendOtpStatus === STATUS_VALUES.success"
       class="flex flex-col"
     >
       <div
@@ -121,26 +121,40 @@ const handleOtpFormSubmit = async () => {
             >First Name</label
           >
           <input
-            v-model="state.signUpForm.data.firstName"
+            v-model="firstName"
+            :firstNameAttrs
             type="text"
             id="firstName"
             name="firstName"
             placeholder="First Name"
             class="rounded-md py-3 px-4 border border-black mb-4"
           />
+          <h4
+            v-if="SignUpFormErrors.firstName"
+            class="text-red-700 bg-[rgba(138,58,52,0.4)] mb-4 rounded-md px-2 font-light"
+          >
+            {{ SignUpFormErrors.firstName }}
+          </h4>
         </div>
         <div class="flex flex-col w-full md:w-[45%]">
           <label htmlFor="lastName" class="text-sm font-medium mb-2"
             >Last Name</label
           >
           <input
-            v-model="state.signUpForm.data.lastName"
+            v-model="lastName"
+            :lastNameAttrs
             type="text"
             id="lastName"
             name="lastName"
             placeholder="Last Name"
             class="rounded-md py-3 px-4 border border-black mb-4"
           />
+          <h4
+            v-if="SignUpFormErrors.lastName"
+            class="text-red-700 bg-[rgba(138,58,52,0.4)] mb-4 rounded-md px-2 font-light"
+          >
+            {{ SignUpFormErrors.lastName }}
+          </h4>
         </div>
       </div>
 
@@ -148,24 +162,37 @@ const handleOtpFormSubmit = async () => {
         >Password</label
       >
       <input
-        v-model="state.signUpForm.data.password"
+        v-model="password"
+        :passwordAttrs
         type="password"
         name="password"
         id="password"
         placeholder="Enter your password"
         class="rounded-md py-3 px-4 border border-black mb-4"
       />
+      <h4
+        v-if="SignUpFormErrors.password"
+        class="text-red-700 bg-[rgba(138,58,52,0.4)] mb-4 rounded-md px-2 font-light"
+      >
+        {{ SignUpFormErrors.password }}
+      </h4>
 
       <label htmlFor="otp" class="text-sm font-medium mb-2">Otp</label>
       <input
-        v-model="state.signUpForm.data.otp"
+        v-model="otp"
+        :otpAttrs
         type="text"
         name="otp"
         id="otp"
         placeholder="Enter your otp"
         class="rounded-md py-3 px-4 border border-black mb-4"
       />
-
+      <h4
+        v-if="SignUpFormErrors.otp"
+        class="text-red-700 bg-[rgba(138,58,52,0.4)] mb-4 rounded-md px-2 font-light"
+      >
+        {{ SignUpFormErrors.otp }}
+      </h4>
       <div class="flex m-3">
         <input type="checkbox" name="remember" id="remember" class="" />
         <label
@@ -181,9 +208,23 @@ const handleOtpFormSubmit = async () => {
       </div>
       <button
         type="submit"
-        class="bg-black rounded-md text-white text-center py-3 h-14"
+        :class="{
+          'rounded-md text-white text-center py-3 h-14 ': true,
+          'bg-black': registerStore.registerUserStatus != STATUS_VALUES.loading,
+          'bg-[rgba(0,0,0,.4)]':
+            registerStore.registerUserStatus === STATUS_VALUES.loading,
+        }"
       >
-        Register
+        <template
+          v-if="registerStore.registerUserStatus === STATUS_VALUES.loading"
+        >
+          <clip-loader :color="'#ffffff'"></clip-loader
+        ></template>
+
+        <template
+          v-if="registerStore.registerUserStatus != STATUS_VALUES.loading"
+          >Register</template
+        >
       </button>
     </form>
     <div class="flex mx-auto font-thin text-sm text-[#4D4D4D] mt-14 mb-4">
