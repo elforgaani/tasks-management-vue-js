@@ -90,8 +90,8 @@ const onSubmit = handleSubmit(async (values) => {
         }"
       >
         <template v-if="signInStatus === STATUS_VALUES.loading"
-          ><ClipLoader :color="white"
-        /></template>
+          ><clip-loader :color="'#ffffff'"></clip-loader
+        ></template>
         <template v-if="signInStatus != STATUS_VALUES.loading">
           Login
         </template>
