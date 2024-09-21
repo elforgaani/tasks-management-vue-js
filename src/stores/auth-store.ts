@@ -27,24 +27,24 @@ export const useAuthStore = defineStore("auth-store", {
   actions: {
     setUser(user: User) {
       localStorage.setItem("user", JSON.stringify(user));
-      this.$state.user = user;
+      this.user = user;
     },
     async signInUser(values: { email: string; password: string }) {
       try {
-        this.$state.signInStatus = STATUS_VALUES.loading;
-        this.$state.error = null;
+        this.signInStatus = STATUS_VALUES.loading;
+        this.error = null;
         const response = await instance.post(apiConstants.signIn, values);
-        this.$state.signInStatus = STATUS_VALUES.success;
+        this.signInStatus = STATUS_VALUES.success;
         this.setUser(response.data);
       } catch (error) {
         const message = errorMapping(error as Error);
-        this.$state.signInStatus = STATUS_VALUES.failure;
-        this.$state.error = message;
+        this.signInStatus = STATUS_VALUES.failure;
+        this.error = message;
       }
     },
     signOutUser() {
       localStorage.removeItem("user");
-      this.$state.user = null;
+      this.user = null;
       router.replace("/auth");
     },
   },
