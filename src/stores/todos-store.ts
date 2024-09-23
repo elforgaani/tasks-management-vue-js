@@ -12,6 +12,10 @@ interface State {
   fetchTodoStatus: Status;
   fetchTodoErrorMessage: string | null;
   currentActiveTodo: Todo | null;
+  deleteTodoStatus: Status;
+  deleteTodoErrorMessage: string | null;
+  updateTodoStatus: Status;
+  updateTodoErrorMessage: string | null;
 }
 export const useTodosStore = defineStore("todos", {
   state(): State {
@@ -20,6 +24,10 @@ export const useTodosStore = defineStore("todos", {
       fetchTodoStatus: STATUS_VALUES.initial,
       fetchTodoErrorMessage: null,
       currentActiveTodo: null,
+      deleteTodoErrorMessage: null,
+      deleteTodoStatus: STATUS_VALUES.initial,
+      updateTodoErrorMessage: null,
+      updateTodoStatus: STATUS_VALUES.initial,
     };
   },
   actions: {
@@ -27,6 +35,7 @@ export const useTodosStore = defineStore("todos", {
       const authStore = useAuthStore();
       try {
         this.fetchTodoStatus = STATUS_VALUES.loading;
+        this.fetchTodoErrorMessage = null;
         const response = await instance.get(apiConstants.todos, {
           headers: { Authorization: `Bearer ${authStore.user?.accessToken}` },
         });
@@ -34,8 +43,6 @@ export const useTodosStore = defineStore("todos", {
         this.todos = response.data.data;
         console.log(this.todos);
         console.log(response);
-        
-        
       } catch (error) {
         this.fetchTodoStatus = STATUS_VALUES.failure;
         const message = errorMapping(error as Error);
@@ -44,6 +51,23 @@ export const useTodosStore = defineStore("todos", {
     },
     setCurrentTodo(todo: Todo) {
       this.currentActiveTodo = todo;
+    },
+    async deleteTodo() {
+      const authStore = useAuthStore();
+      try {
+        this.deleteTodoStatus = STATUS_VALUES.loading;
+        this.deleteTodoErrorMessage = null;
+        await instance.delete(apiConstants.deleteTodo + this.currentActiveTodo?._id, {
+          headers: { Authorization: `Bearer ${authStore.user?.accessToken}` },
+        });
+        this.deleteTodoStatus = STATUS_VALUES.success;
+        this.currentActiveTodo = null;
+        this.getTodos()
+      } catch (error) {
+        const message = errorMapping(error as Error);
+        this.deleteTodoStatus = STATUS_VALUES.failure;
+        this.deleteTodoErrorMessage = message;
+      }
     },
   },
 });
