@@ -13,9 +13,11 @@
   "dependencies": {
     "@vee-validate/yup": "^4.13.2",
     "axios": "^1.7.7",
+    "oh-vue-icons": "^1.0.0-rc3",
     "pinia": "^2.2.2",
     "vee-validate": "^4.13.2",
     "vue": "^3.4.29",
+    "vue-i18n": "^10.0.1",
     "vue-router": "^4.4.5",
     "vue-spinner": "^1.0.4",
     "vue-toastification": "^2.0.0-rc.5",
