@@ -70,9 +70,32 @@ onMounted(() => {
         v-if="todosStore.currentActiveTodo != null"
         class="m-1 p-2 border rounded-lg"
       >
-        <h4 class="text-slate-500 text-sm">
-          {{ todosStore.currentActiveTodo.title }}
-        </h4>
+        <div class="flex justify-between items-center py-2">
+          <h4 class="text-slate-500 text-sm">
+            {{ todosStore.currentActiveTodo.title }}
+          </h4>
+          <div class="flex items-center">
+            <button
+              :disabled="
+                todosStore.deleteTodoStatus === STATUS_VALUES.loading ||
+                todosStore.updateTodoStatus === STATUS_VALUES.loading
+              "
+              class="px-2 py-1 border-2 rounded-lg border-blue-600 mx-1"
+            >
+              <v-icon name="co-pen" animation="float" :hover="true" />
+            </button>
+            <button
+              @click="() => todosStore.deleteTodo()"
+              :disabled="
+                todosStore.deleteTodoStatus === STATUS_VALUES.loading ||
+                todosStore.updateTodoStatus === STATUS_VALUES.loading
+              "
+              class="px-2 py-1 border-2 rounded-lg border-red-600 mx-1"
+            >
+              <v-icon name="io-trash-outline" animation="float" :hover="true" />
+            </button>
+          </div>
+        </div>
         <div class="min-h-16 max-h-36 rounded-lg overflow-y-auto my-3">
           {{ todosStore.currentActiveTodo.description }}
         </div>
