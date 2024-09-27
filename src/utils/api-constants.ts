@@ -5,5 +5,6 @@ export const apiConstants = {
   signUp: "/user/sign-up",
   todos: "/todo/get-todos",
   updateTodo: "/todo/update-todo/",
-  deleteToto: "/delete-todo/",
+  deleteTodo: "/todo/delete-todo/",
+  refreshToken: "/user/generate-new-token",
 };
