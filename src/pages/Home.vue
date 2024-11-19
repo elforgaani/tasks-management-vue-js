@@ -16,7 +16,6 @@ onMounted(() => {
 
 <template>
   <section class="mt-28 px-20 flex border-t-2 border-slate-200 rounded-lg">
-    <!-- Left section (todo list) -->
     <div
       class="todo-list w-[70%] h-[calc(100vh-7rem)] overflow-y-auto ms-2 flex flex-col items-center py-6 border-e-2 border-slate-200 rounded-lg"
     >
@@ -51,7 +50,6 @@ onMounted(() => {
       </template>
     </div>
 
-    <!-- Right section (fixed details) -->
     <div
       class="w-[30%] h-[calc(100vh-7rem)] ms-2 fixed top-28 right-6 overflow-y-auto rounded-lg p-4"
     >
@@ -124,7 +122,6 @@ onMounted(() => {
           </table>
         </div>
       </div>
-      <!-- Content for todo details goes here -->
     </div>
   </section>
 </template>
