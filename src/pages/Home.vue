@@ -5,8 +5,8 @@ import { STATUS_VALUES } from "@/utils/constants";
 import { onMounted } from "vue";
 
 import ClipLoader from "vue-spinner/src/ClipLoader.vue";
-import img from "../assets/images/empty.svg";
-import img2 from "../assets/images/no-data.png";
+import img from "../assets/images/main-picture.png";
+import img2 from "../assets/images/main-picture.png";
 const todosStore = useTodosStore();
 
 onMounted(() => {
@@ -34,6 +34,7 @@ onMounted(() => {
           v-for="todo in todosStore.todos"
           :todo="todo"
           :set-active-task-fn="todosStore.setCurrentTodo"
+          :key="todo._id"
         />
       </template>
       <template
